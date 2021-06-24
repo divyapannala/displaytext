@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     DetailsAdapter adaptery;
     SharedPreferences sp;
     Context context;
-    ArrayList<PersonDetails> detailsList;
+ArrayList<PersonDetails> detailsList;
     EditText pemail,pcontact;
     Button displaybtn;
 
@@ -39,17 +39,24 @@ public class MainActivity extends AppCompatActivity {
 
         pemail=findViewById(R.id.personemail);
         pcontact=findViewById(R.id.personcontact);
-
-        displaybtn=findViewById(R.id.display);
         recyclerview=(RecyclerView) findViewById(R.id.recyclerview);
+        displaybtn=findViewById(R.id.display);
+
+        sp=getSharedPreferences("persondetails",MODE_PRIVATE);
+        SharedPreferences.Editor e=sp.edit();
+        String usersList= sp.getString("usersList", null);
+        if (usersList != null) {
+            detailsList = new Gson().fromJson(usersList, new TypeToken<ArrayList<PersonDetails>>() {
+            }.getType());
+        } else {
+            detailsList=new ArrayList<>();
+        }
+
 
         LinearLayoutManager layoutManager=new LinearLayoutManager(getApplicationContext());
-        recyclerview.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
-        recyclerview.setLayoutManager(layoutManager);
-        adaptery=new DetailsAdapter(context,detailsList);
-        recyclerview.setAdapter(adaptery);
-
-
+recyclerview.setLayoutManager(layoutManager);
+adaptery=new DetailsAdapter(context,detailsList);
+recyclerview.setAdapter(adaptery);
 
         displaybtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,44 +66,40 @@ public class MainActivity extends AppCompatActivity {
 
                 if(eid.isEmpty() && econtact.isEmpty()){
                     Toast.makeText(MainActivity.this,"Enter The details",Toast.LENGTH_SHORT).show();
-
                 }
+
                 else{
-                    sp=getSharedPreferences("details",MODE_PRIVATE);
-                    SharedPreferences.Editor e=sp.edit();
-                    String usersList= sp.getString("usersList", "");
+                    try {
 
-                   try {
-                        if (usersList != null) {
-                            detailsList = new Gson().fromJson(usersList, new TypeToken<ArrayList<PersonDetails>>(){
-                            }.getType());
-                        } else {
-                            detailsList=new ArrayList<>();
-                       }
-
-                        for (PersonDetails person : detailsList) {
-                            String str = new Gson().toJson(detailsList);
-                            detailsList.add(new PersonDetails(eid, econtact));
-                            adaptery.notifyItemInserted(detailsList.size() - 1);
-                            if (person .getPersonemail().equals(eid) || person .getPersoncontact().equals(econtact) ) {
-                                Toast.makeText(MainActivity.this,"User Already Exists",Toast.LENGTH_SHORT).show();
-                            }
-                            else
-                            {
-                                detailsList= new Gson().fromJson(usersList, new TypeToken<ArrayList<PersonDetails>>() {}.getType());
-                                e.putString("usersList",  new Gson().toJson(detailsList));
-                                e.commit();
-                                Toast.makeText(MainActivity.this, "User Details Registered",Toast.LENGTH_SHORT).show();
-                                pemail.setText("");
-                                pcontact.setText("");
+                        boolean  userExist = false;
+                        for (PersonDetails pern : detailsList) {
+                            if (pern.getPersonemail().equalsIgnoreCase(eid) || pern .getPersoncontact().equalsIgnoreCase(econtact) ) {
+                                //user exist
+                                userExist = true;
                             }
                         }
 
+                        if(userExist)
+                        {
+                            Toast.makeText(MainActivity.this,"Already user exits",Toast.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            detailsList.add(new PersonDetails(eid, econtact));
+                            adaptery.notifyItemInserted(detailsList.size() - 1);
 
-                   }catch (NumberFormatException exception){
-                       Toast.makeText(MainActivity.this,"Cannot Display",Toast.LENGTH_SHORT).show();
-                   }
+                            e.putString("usersList",  new Gson().toJson(detailsList));
+                            e.commit();//---saves the values---
+                            Toast.makeText(MainActivity.this, "User Details Registered",Toast.LENGTH_SHORT).show();
+                            pemail.setText("");
+                            pcontact.setText("");
+                        }
+
+                    }catch (NumberFormatException exception){
+                        Toast.makeText(MainActivity.this,"Cannot Display",Toast.LENGTH_SHORT).show();
+                    }
                 }
+
             }
         });
     }
